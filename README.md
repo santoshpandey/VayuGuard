@@ -5,7 +5,7 @@ GenAI-powered mobile-first web app that helps Indian urban families navigate win
 ## Stack
 
 - React 19 + TypeScript + Vite
-- Tailwind CSS v4
+- Tailwind CSS v4 
 - Lucide Icons
 - `@google/genai` (`gemini-2.5-flash`) with JSON `responseSchema`
 
