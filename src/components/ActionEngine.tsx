@@ -50,6 +50,7 @@ export function ActionEngine({
           <button
             key={t.id}
             type="button"
+            aria-pressed={tab === t.id}
             onClick={() => onTabChange(t.id)}
             className={`flex-1 pb-2.5 text-xs font-semibold transition-colors ${
               tab === t.id ? 'tab-active' : 'text-muted hover:text-text'
@@ -102,6 +103,7 @@ export function ActionEngine({
                     </p>
                     <button
                       type="button"
+                      aria-pressed={done}
                       onClick={() =>
                         onToggleComplete(r.id, r.exposureReductionPct, r.co2SavedKg)
                       }
@@ -133,6 +135,7 @@ export function ActionEngine({
                   <button
                     key={id}
                     type="button"
+                    aria-pressed={hackFilter === id}
                     onClick={() => setHackFilter(id)}
                     className={`chip rounded-full border px-3 py-1 text-[0.7rem] font-medium ${
                       hackFilter === id ? 'chip-active' : 'chip-inactive'
@@ -204,6 +207,7 @@ export function ActionEngine({
 
                     <button
                       type="button"
+                      aria-pressed={done}
                       onClick={() =>
                         onToggleComplete(h.id, h.exposureReductionPct, h.co2SavedKg)
                       }
@@ -271,6 +275,7 @@ export function ActionEngine({
 
                     <button
                       type="button"
+                      aria-pressed={done}
                       onClick={() =>
                         onToggleComplete(a.id, a.exposureReductionPct, a.co2SavedKg)
                       }
