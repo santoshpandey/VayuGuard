@@ -8,9 +8,10 @@ interface AqiHeroProps {
   advisory: string;
   safeWindow: string;
   loading?: boolean;
+  airStatus?: 'loading' | 'live' | 'offline';
 }
 
-export function AqiHero({ city, advisory, safeWindow, loading }: AqiHeroProps) {
+export function AqiHero({ city, advisory, safeWindow, loading, airStatus = 'offline' }: AqiHeroProps) {
   const accent = aqiAccent(city.tier);
 
   return (
@@ -62,12 +63,15 @@ export function AqiHero({ city, advisory, safeWindow, loading }: AqiHeroProps) {
           {whoMultiplier(city.pm25)}
         </span>
       </div>
+      <p className="relative mt-2 text-[0.65rem] text-muted" aria-live="polite">
+        {airStatus === 'live' ? 'Live Open-Meteo AQI and forecast' : airStatus === 'loading' ? 'Updating live air quality…' : 'Offline · showing static preset AQI'}
+      </p>
 
       <div className="relative mt-3 flex items-center gap-2 rounded-xl border border-border bg-bg/35 px-3 py-2">
         <Clock className="h-3.5 w-3.5 shrink-0 text-emerald" />
         <p className="text-xs text-text">
           <span className="text-muted">Best window: </span>
-          {loading ? (
+          {loading || airStatus === 'loading' ? (
             <span className="skeleton inline-block h-3 w-28 align-middle" />
           ) : (
             <span className="font-medium text-emerald-300">{safeWindow}</span>

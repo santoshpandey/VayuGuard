@@ -21,6 +21,15 @@ export function HouseholdPanel({ open, profile, onChange, onClose }: HouseholdPa
     if (open) setDraft(profile);
   }, [open, profile]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
@@ -31,10 +40,10 @@ export function HouseholdPanel({ open, profile, onChange, onClose }: HouseholdPa
         aria-label="Close household panel"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto glass-strong rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up safe-bottom">
+      <div role="dialog" aria-modal="true" aria-labelledby="household-title" className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto glass-strong rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up safe-bottom">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-display text-lg font-semibold">Household Profile</h2>
+            <h2 id="household-title" className="font-display text-lg font-semibold">Household Profile</h2>
             <p className="text-xs text-muted mt-0.5">Apply to regenerate your tailored plan</p>
           </div>
           <button
@@ -59,6 +68,7 @@ export function HouseholdPanel({ open, profile, onChange, onClose }: HouseholdPa
                 <button
                   key={tag}
                   type="button"
+                  aria-pressed={active}
                   onClick={() =>
                     setDraft((d) => ({ ...d, family: toggle(d.family, tag as FamilyTag) }))
                   }
@@ -85,6 +95,7 @@ export function HouseholdPanel({ open, profile, onChange, onClose }: HouseholdPa
                 <button
                   key={tag}
                   type="button"
+                  aria-pressed={active}
                   onClick={() =>
                     setDraft((d) => ({
                       ...d,

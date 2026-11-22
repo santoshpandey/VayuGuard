@@ -16,6 +16,8 @@ export interface CityPreset {
   id: string;
   name: string;
   locality: string;
+  latitude: number;
+  longitude: number;
   aqi: number;
   pm25: number;
   primaryPollutant: string;
@@ -73,12 +75,23 @@ export interface HouseholdProfile {
   homeSetup: HomeSetupTag[];
 }
 
-export interface ChatMessage {
-  id: string;
+export interface CoachMessage {
   role: 'user' | 'assistant';
-  content: string;
-  verdict?: string;
-  timestamp: number;
+  text: string;
+}
+
+export interface HourlyAirQuality {
+  time: string;
+  pm25: number;
+  aqi: number;
+}
+
+export interface VisionAudit {
+  detectedSubject: 'Indoor Room' | 'Air Purifier Filter' | 'Outdoor Haze / Commute' | 'Other';
+  riskLevel: 'low' | 'moderate' | 'high' | 'severe';
+  findings: string[];
+  immediateFixes: string[];
+  estimatedPm25Impact: string;
 }
 
 export interface ImpactState {

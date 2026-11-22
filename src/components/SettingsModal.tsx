@@ -22,6 +22,15 @@ export function SettingsModal({
     if (open) setValue(apiKey);
   }, [open, apiKey]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
@@ -32,10 +41,10 @@ export function SettingsModal({
         aria-label="Close settings"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md glass-strong rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up safe-bottom">
+      <div role="dialog" aria-modal="true" aria-labelledby="settings-title" className="relative w-full max-w-md glass-strong rounded-t-3xl sm:rounded-3xl p-5 animate-slide-up safe-bottom">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-display text-lg font-semibold">Settings</h2>
+            <h2 id="settings-title" className="font-display text-lg font-semibold">Settings</h2>
             <p className="text-xs text-muted mt-0.5">Gemini API for live generation</p>
           </div>
           <button
@@ -64,7 +73,7 @@ export function SettingsModal({
         </label>
         <p className="mt-2 text-[0.7rem] text-muted leading-relaxed">
           Without a key, VayuGuard runs in demo mode using realistic city presets. Keys stay in
-          localStorage on this device only.
+          this browser session&apos;s sessionStorage and are cleared when the session ends.
         </p>
 
         <div className="mt-5 flex flex-col gap-2">

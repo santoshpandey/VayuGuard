@@ -6,6 +6,7 @@ import type {
   HouseholdProfile,
 } from './types';
 import {
+  CITY_PRESETS,
   DEFAULT_HOUSEHOLD,
   getCityById,
   getFallbackPlan,
@@ -25,6 +26,11 @@ import { ActionEngine } from './components/ActionEngine';
 import { SmogCoach } from './components/SmogCoach';
 import { ChampionCard } from './components/ChampionCard';
 import { DesktopContext } from './components/DesktopContext';
+import { HourlySmogChart } from './components/HourlySmogChart';
+import { VisionAuditCard } from './components/VisionAuditCard';
+import { CommunityImpactCard } from './components/CommunityImpactCard';
+import { fetchAirQuality } from './services/airQualityApi';
+import type { HourlyAirQuality } from './types';
 
 export default function App() {
   const [city, setCity] = useState<CityPreset>(() => getCityById('noida'));
@@ -33,6 +39,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<ActionTab>('routine');
   const [apiKey, setApiKey] = useState(() => loadApiKey());
+  const [hourly, setHourly] = useState<HourlyAirQuality[]>([]);
+  const [airStatus, setAirStatus] = useState<'loading' | 'live' | 'offline'>('loading');
+  const [safeWindow, setSafeWindow] = useState(() => getFallbackPlan('noida').safeVentilationWindow);
 
   const [locationOpen, setLocationOpen] = useState(false);
   const [householdOpen, setHouseholdOpen] = useState(false);
@@ -45,8 +54,49 @@ export default function App() {
 
   const impactCredits = useRef<Map<string, { exposure: number; co2: number }>>(new Map());
   const genToken = useRef(0);
-  const contextKey = useRef(`${city.id}|${household.family.join(',')}|${household.homeSetup.join(',')}`);
+  const contextKey = useRef(`${city.id}|${city.aqi}|${city.pm25}|${household.family.join(',')}|${household.homeSetup.join(',')}`);
   const mounted = useRef(false);
+  const airRequest = useRef(0);
+
+  useEffect(() => {
+    const requestId = ++airRequest.current;
+    setAirStatus('loading');
+    void fetchAirQuality(city).then((result) => {
+      if (requestId !== airRequest.current) return;
+      setCity((current) => ({
+        ...current,
+        ...result.city,
+        id: current.id,
+        name: current.name,
+        locality: current.locality,
+      }));
+      setHourly(result.hourly);
+      setSafeWindow(result.safeVentilationWindow);
+      setAirStatus('live');
+    }).catch((error: unknown) => {
+      if (requestId !== airRequest.current) return;
+      console.warn('Live air quality unavailable; using static preset data.', error);
+      const nearest = CITY_PRESETS.reduce((best, preset) => {
+        const distance = Math.hypot(preset.latitude - city.latitude, preset.longitude - city.longitude);
+        const bestDistance = Math.hypot(best.latitude - city.latitude, best.longitude - city.longitude);
+        return distance < bestDistance ? preset : best;
+      });
+      setCity((current) => ({
+        ...current,
+        aqi: nearest.aqi,
+        pm25: nearest.pm25,
+        primaryPollutant: nearest.primaryPollutant,
+        tier: nearest.tier,
+        tierLabel: nearest.tierLabel,
+      }));
+      setHourly([]);
+      setSafeWindow(getFallbackPlan(city.id).safeVentilationWindow);
+      setAirStatus('offline');
+    });
+    return () => {
+      airRequest.current += 1;
+    };
+  }, [city.id, city.latitude, city.longitude]);
 
   const refreshPlan = useCallback(
     async (nextCity: CityPreset, nextHousehold: HouseholdProfile, key: string) => {
@@ -78,7 +128,7 @@ export default function App() {
 
   // Regenerate when city or household profile changes
   useEffect(() => {
-    const key = `${city.id}|${household.family.join(',')}|${household.homeSetup.join(',')}`;
+    const key = `${city.id}|${city.aqi}|${city.pm25}|${household.family.join(',')}|${household.homeSetup.join(',')}`;
     if (!mounted.current) {
       mounted.current = true;
       contextKey.current = key;
@@ -92,6 +142,10 @@ export default function App() {
   const allActions = useMemo(
     () => [...plan.dailyRoutines, ...plan.indoorHacks, ...plan.sustainableAlternatives],
     [plan]
+  );
+  const effectivePlan = useMemo(
+    () => ({ ...plan, safeVentilationWindow: safeWindow }),
+    [plan, safeWindow]
   );
 
   function toggleComplete(id: string, exposurePct: number, co2Kg: number) {
@@ -140,9 +194,14 @@ export default function App() {
             <AqiHero
               city={city}
               advisory={plan.advisorySummary}
-              safeWindow={plan.safeVentilationWindow}
+              safeWindow={safeWindow}
               loading={loading}
+              airStatus={airStatus}
             />
+
+            {hourly.length > 0 && <HourlySmogChart hourly={hourly} />}
+
+            <VisionAuditCard city={city} household={household} apiKey={apiKey} />
 
             <button
               type="button"
@@ -180,6 +239,14 @@ export default function App() {
               loading={loading}
             />
 
+            <CommunityImpactCard
+              city={city}
+              safeWindow={safeWindow}
+              alternatives={plan.sustainableAlternatives}
+              completedIds={completedIds}
+              apiKey={apiKey}
+            />
+
             <ChampionCard
               city={city}
               exposureReducedPct={exposureReducedPct}
@@ -192,7 +259,7 @@ export default function App() {
           <SmogCoach
             city={city}
             household={household}
-            plan={plan}
+            plan={effectivePlan}
             apiKey={apiKey}
             openSignal={coachOpenSignal}
           />
